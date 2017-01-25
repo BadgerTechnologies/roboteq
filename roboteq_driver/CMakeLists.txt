@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(roboteq_driver)
 
-find_package(catkin REQUIRED COMPONENTS roboteq_msgs roscpp serial)
+find_package(catkin REQUIRED COMPONENTS roscpp serial message_generation std_msgs roboteq_msgs)
 
 catkin_package()
 
