@@ -34,6 +34,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Quadrature Encoder = 4.0 * N lines per rev
  */
 #define ENC_LINES (4.0 * 4096.0)
+const double max_radians = (((uint64_t)INT_MAX - INT_MIN) + 1) * (2 * M_PI) / ENC_LINES;
+
 namespace roboteq_msgs {
   ROS_DECLARE_MESSAGE(Command);
   ROS_DECLARE_MESSAGE(Feedback);
