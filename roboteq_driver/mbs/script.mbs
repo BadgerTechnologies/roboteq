@@ -1,5 +1,5 @@
 SCRIPT_VER=28
-MAX_CHANNELS=1
+MAX_CHANNELS=2
 Dim last_mode[2] as Integer
 
 ' Mode values are:
@@ -23,22 +23,48 @@ setconfig(_AMOD, 2, 1) ' Analog input 2 absolute mode
 
 ' Undervoltage/overvoltage limits (p214)
 setconfig(_OVL, 700)
-setconfig(_UVL, 280)
+setconfig(_UVL, 100)
+
+'Set the encoder up out here... The arguments are not the same for each channel
+'This sets the encoder mode to:
+'Motor Channel 1 uses encoder channel 1 as feedback
+'Motor Channel 2 uses encoder channel 2 as feedback
+'Arguements were found by 
+setconfig(_EMOD, 1, 18)
+setconfig(_EMOD, 2, 34)
 
 for ch = 1 andwhile ch <= MAX_CHANNELS evaluate ch++
-	' Encoder, speed config (p208, p221)
-	setconfig(_EMOD, ch, 50)
-	setconfig(_EPPR, ch, 1024)
-	setconfig(_MXRPM, ch, 3500)
+	' Encoder, speed config (p208, p221) - Encoder is not used for HB/Ant Robots
+	' Should they explicitly be set to not use encoder feedback?
+'	setconfig(_EMOD, ch, 50)
+	setconfig(_EPPR, ch, 2048)
+
+	' Need to configure the Encoders as feedback:
+	' This setting is confusing... When setting "Hall Feedback" through the RoboRun utility, ~BLFB returns a 1.  The manual says this should be 0 for hall feedback??
+	setconfig(_BLFB, ch, 0)
+	' Set the stall detection to 50% at 1000 ms, we had set to 500 ms at 25% (2)
+	setconfig(_BLSTD, ch, 3)
+	' Set pole count (needed to be negative to get speed feedback sign correct for HB/Ant Golden Motors)
+	setconfig(_BPOL, ch, -4)
+	' Should the hall counter and actions be explicitly set?
+
+	' Max speed for the motors is ~2800 RPM, so set it to 2500 RPM 100.0% command (1000) will now correspond to 2500 RPM
+	setconfig(_MXRPM, ch, 2500)
+	' Closed-loop Error Detection - This command disables the closed-loop error detection, leave as-is for now
 	setconfig(_CLERD, ch, 0)
 
 	' Current limit (p216)
-	setconfig(_ALIM, ch, 1500)
-	setconfig(_ATGA, ch, 2000)
+	' Set the amps limit to 10 amps, cannot be set less than 10 Amps
+	setconfig(_ALIM, ch, 100)
+	' Amps Trigger Action - not sure these parameters make sense to me....., zero should turn it off
+	setconfig(_ATGA, ch, 0)
+	' Amps trigger delay - set to 50 ms, seems reasonable for now
 	setconfig(_ATGD, ch, 50)
+	' Amps trigger level is set at zero??
 	setconfig(_ATRIG, ch, 0)
 
 	' Max acceleration/deceleration (p219)
+	' Accel and decel set to 2000 RPM/sec, probably okay - may want to adjust for current draw
 	setconfig(_MAC, ch, 20000)
 	setconfig(_MDEC, ch, 20000)
 next
@@ -49,6 +75,9 @@ top:
 			last_mode[ch - 1] = getvalue(_VAR, ch)
 
 			' Motor to be stopped (high-Z).
+			' Keeps the motor in closed-loop speed, but sets the gains to zero
+			' This seems like the right thing to do since the motor "hunts" at zero speed
+			' Sets integral cap in PID controller to 0% (i.e., motor is off)
 			if getvalue(_VAR, ch) = -1 then
 				setconfig(_MMOD, ch, 1)
 				setconfig(_KP, ch, 0)
@@ -59,18 +88,22 @@ top:
 			end if
 
 			' Motor in velocity-control mode.
+			' Sets motor to speed control mode, I reduced the gains to only Ki = 1
+			' Ki could not be set any higher without having issues when stopping
+			' Sets integral Cap to 100%
 			if getvalue(_VAR, ch) = 0 then
 				setconfig(_MMOD, ch, 1)
-				setconfig(_KP, ch, 20)
-				setconfig(_KI, ch, 40)
-				setconfig(_KD, ch, 10)
+				setconfig(_KP, ch, 0)
+				setconfig(_KI, ch, 5)
+				setconfig(_KD, ch, 0)
 				setconfig(_ICAP, ch, 100)
 			end if
 
 			' Motor in position-control mode.
+			' Don't know if this will work, I'm assuming that HB/Ant will only call for speed control
 			if getvalue(_VAR, ch) = 1 then
 				setconfig(_MMOD, ch, 3)
-				setconfig(_KP, ch, 2)
+				setconfig(_KP, ch, 0)
 				setconfig(_KI, ch, 0)
 				setconfig(_KD, ch, 0)
 				setconfig(_ICAP, ch, 0)
@@ -96,8 +129,12 @@ PrintFeedback:
 	print(":", getvalue(_MOTAMPS, ch))
 	print(":", getvalue(_MOTCMD, ch))
 	print(":", getvalue(_MOTPWR, ch))
+	'Original values in Roboteq script read from the encoder
+	'Use Encoder feedback
 	print(":", getvalue(_ABSPEED, ch))
+	'print(":", getvalue(_BLSPEED, ch))
 	print(":", getvalue(_ABCNTR, ch))
+	'print(":", getvalue(_BLCNTR, ch))
 	print(":", getvalue(_VOLTS, 2))
 	print(":", getvalue(_BATAMPS, ch))
 	print(":", getvalue(_ANAIN, ch))

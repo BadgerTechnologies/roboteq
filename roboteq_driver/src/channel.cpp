@@ -30,11 +30,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "roboteq_msgs/Feedback.h"
 #include "roboteq_msgs/Command.h"
 
+#define ROBOTEQ_MAX_RPM	2500
 
 namespace roboteq {
 
 Channel::Channel(int channel_num, std::string ns, Controller* controller) :
-  nh_(ns), controller_(controller), channel_num_(channel_num), max_rpm_(3500),
+  nh_(ns), controller_(controller), channel_num_(channel_num), max_rpm_(ROBOTEQ_MAX_RPM),
   last_mode_(255)
 {
   sub_cmd_ = nh_.subscribe("cmd", 1, &Channel::cmdCallback, this);

@@ -27,6 +27,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/ros.h"
 
+/*
+ * This will depend on how you set up the RoboteQ to get feedback
+ * The .mbs script needs to be set up correctly
+ * Hall sensors = 6.0 * PolePairs 'lines' per rev
+ * Quadrature Encoder = 4.0 * N lines per rev
+ */
+#define ENC_LINES (4.0 * 4096.0)
 namespace roboteq_msgs {
   ROS_DECLARE_MESSAGE(Command);
   ROS_DECLARE_MESSAGE(Feedback);
@@ -69,7 +76,7 @@ protected:
    */
   static double to_encoder_ticks(double x)
   {
-    return x * 4096 / (2 * M_PI);
+    return x * ENC_LINES / (2 * M_PI);
   }
 
   /**
@@ -81,7 +88,7 @@ protected:
    */
   static double from_encoder_ticks(double x)
   {
-    return x * (2 * M_PI) / 4096;
+    return x * (2 * M_PI) / ENC_LINES;
   }
 
   void cmdCallback(const roboteq_msgs::Command&);
