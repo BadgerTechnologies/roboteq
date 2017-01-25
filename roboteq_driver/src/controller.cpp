@@ -48,8 +48,8 @@ const std::string eol("\r");
 const size_t max_line_length(128);
 
 Controller::Controller(const char *port, int baud)
-  : nh_("~"), port_(port), baud_(baud), connected_(false), receiving_script_messages_(false),
-    version_(""), start_script_attempts_(0), serial_(NULL),
+  : port_(port), baud_(baud), connected_(false), receiving_script_messages_(false),
+    version_(""), serial_(NULL), nh_("~"), start_script_attempts_(0),
     command("!", this), query("?", this), param("^", this)
 {
   pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
@@ -198,7 +198,7 @@ void Controller::processFeedback(std::string msg) {
     ROS_WARN("Failure parsing feedback channel number. Dropping message.");
     return;
   }
-  if (channel_num >= 1 && channel_num <= channels_.size()) {
+  if (channel_num >= 1 && channel_num <= (int)channels_.size()) {
     channels_[channel_num - 1]->feedbackCallback(fields);
   } else {
     ROS_WARN("Bad channel number. Dropping message.");
