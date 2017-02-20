@@ -30,7 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "roboteq_msgs/Feedback.h"
 #include "roboteq_msgs/Command.h"
 
-#define ROBOTEQ_MAX_RPM	2500
+#define ROBOTEQ_MAX_RPM	(2500/2)
 
 namespace roboteq {
 
