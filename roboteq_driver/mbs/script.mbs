@@ -10,6 +10,7 @@ Dim last_mode[2] as Integer
 ' mode, the setup for which is run when last_mode[0] != VAR[1].
 last_mode[0] = -127
 setcommand(_VAR, 1, -1)
+setcommand(_VAR, 2, -1)
 
 ' Motor controller configuration. Much of this is particular to Grizzly
 ' and can be generalized/parameterized as the need arises. Page numbers
@@ -29,14 +30,14 @@ setconfig(_UVL, 100)
 'This sets the encoder mode to:
 'Motor Channel 1 uses encoder channel 1 as feedback
 'Motor Channel 2 uses encoder channel 2 as feedback
-'Arguements were found by 
+'Arguements were found by
 setconfig(_EMOD, 1, 18)
 setconfig(_EMOD, 2, 34)
 
 for ch = 1 andwhile ch <= MAX_CHANNELS evaluate ch++
 	' Encoder, speed config (p208, p221) - Encoder is not used for HB/Ant Robots
 	' Should they explicitly be set to not use encoder feedback?
-'	setconfig(_EMOD, ch, 50)
+        'setconfig(_EMOD, ch, 50)
 	setconfig(_EPPR, ch, 2048)
 
 	' Need to configure the Encoders as feedback:
@@ -109,7 +110,7 @@ top:
 				setconfig(_ICAP, ch, 0)
 			end if
 		end if
-		
+
 		' Send feedback for this channel at 25Hz.
 		GoSub PrintFeedback
 	next
@@ -141,7 +142,7 @@ PrintFeedback:
 	print(":", getvalue(_TEMP, ch+1))
 	print("\r")
 	Return
-	
+
 PrintStatus:
 	print("&s:", SCRIPT_VER)
 	print(":", getvalue(_FLTFLAG))
