@@ -9,6 +9,7 @@ Dim last_mode[2] as Integer
 ' These correspond to the constants in roboteq_msgs/Command. The motor begins in stopped
 ' mode, the setup for which is run when last_mode[0] != VAR[1].
 last_mode[0] = -127
+last_mode[1] = -127
 setcommand(_VAR, 1, -1)
 setcommand(_VAR, 2, -1)
 
