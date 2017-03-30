@@ -1,0 +1,46 @@
+
+Notes for Testing the Badger MBS Script Using Roborun+
+------------------------------------------------------
+
+Once the script has been loaded, you need to be able to use the console to
+set certain values to put the controller in a state that allows the user to
+run the motor with the tools under the "Run" tab.  The following are important
+to remember.
+
+  1)  Restart the script after loading a new/modified version using the buttons
+      provided on the "Scripting" tab.
+  2)  On the "Console" tab.
+      a.  !C 1:0
+          This sets the encoder counter for motor 1 to zero.  You can test
+          the encoder by turning the wheel one revolution after resetting
+          to zero and checking the total count.  It should be equal to:
+            count = GEAR_RATIO * (LINES_PER_REV * 4)
+          The factor of 4 is because the Roboteq is using quadrature counting.
+      b.  !C 2:0
+          Same for motor two...
+      c.  !VAR 1:0
+          Sets motor 1 to mode zero, or velocity control
+          !VAR 1:-1
+          Sets motor 1 to the stopped mode (actually any negative value is ok)
+          !VAR 1:1
+          Sets motor 1 to position control mode (not tested)
+          !VAR 2:x
+          Same set of commands for motor 2
+      d.  !CB 1:0
+          Set motor 1 hall counter to zero
+          !CB 2:0
+          Set motor 2 hall counter to zero
+
+          Again...after a full revolution of the wheel, this count should be
+            hall_count = GEAR_RATIO * (4_POLE_PAIRS * 6_HALL_STATES)
+
+      e.  You can read the value of any of the variables you set using a
+          ? instead of an !.  You can also read the values back on the
+          "Run" tab
+
+3)  The Robteq+ seems to have some quirks.  Sometimes, it is necessary to
+    shut it down and restart the program.  Especially if the USB was
+    connected after the program was started.  Certain things like the ability
+    to "join" the left and right motor with the checkbox under the "Run" tab
+    seem to be missing.
+
