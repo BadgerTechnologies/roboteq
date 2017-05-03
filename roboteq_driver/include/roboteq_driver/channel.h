@@ -33,8 +33,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Hall sensors = 6.0 * PolePairs 'lines' per rev
  * Quadrature Encoder = 4.0 * N lines per rev
  */
-#define ENC_LINES (4.0 * 4096.0)
-const double max_radians = (((uint64_t)INT_MAX - INT_MIN) + 1) * (2 * M_PI) / ENC_LINES;
+/* #define ENC_LINES (4.0 * 4096.0) */
+/* #define ENC_LINES_REMOVE_ME_WHEN_NO_DEPENDENCY_IN_ANT_MOTOR_FEEDBACK 512 */
+/* const double max_radians = (((uint64_t)INT_MAX - INT_MIN) + 1) * (2 * M_PI) / ENC_LINES_REMOVE_ME_WHEN_NO_DEPENDENCY_IN_ANT_MOTOR_FEEDBACK; */
+
+#define MAX_POSITION_REGISTER_COUNTS 0xFFFFFFFF
 
 namespace roboteq_msgs {
   ROS_DECLARE_MESSAGE(Command);
@@ -76,9 +79,10 @@ protected:
    * @param x Angular position in radians.
    * @return Angular position in encoder ticks.
    */
-  static double to_encoder_ticks(double x)
+  double to_encoder_ticks(double x)
   {
-    return x * ENC_LINES / (2 * M_PI);
+     //return x * ENC_LINES / (2 * M_PI);
+     return x * enc_quad_lines_ / (2 * M_PI);
   }
 
   /**
@@ -88,9 +92,10 @@ protected:
    * @param x Angular position in encoder ticks.
    * @return Angular position in radians.
    */
-  static double from_encoder_ticks(double x)
+  double from_encoder_ticks(double x)
   {
-    return x * (2 * M_PI) / ENC_LINES;
+     //return x * (2 * M_PI) / ENC_LINES;
+     return x * (2 * M_PI) / enc_quad_lines_;
   }
 
   void cmdCallback(const roboteq_msgs::Command&);
@@ -107,6 +112,13 @@ protected:
 
   ros::Time last_feedback_time_;
   uint8_t last_mode_;
+
+  /* Position functions will report wrong until the Roboteq sends back the number
+     of lines per rev in a feedback message.
+  */
+  double enc_quad_lines_;
+  /* double max_radians_; */
+  double previous_position_;
 };
 
 }

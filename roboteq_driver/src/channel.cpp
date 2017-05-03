@@ -97,17 +97,59 @@ void Channel::timeoutCallback(const ros::TimerEvent&)
 void Channel::feedbackCallback(std::vector<std::string> fields)
 {
   roboteq_msgs::Feedback msg;
+  static uint32_t first_time = 0;
+  static uint32_t previous_ticks = 0;
+  static uint32_t current_ticks, delta_ticks;
+  double current_position;
+
   msg.header.stamp = last_feedback_time_ = ros::Time::now();
 
   // Scale factors as outlined in the relevant portions of the user manual, please
   // see mbs/script.mbs for URL and specific page references.
   try
   {
+    enc_quad_lines_ = boost::lexical_cast<float>(fields[11]) * 4.0;
+    // max_radians_ = (((uint64_t)INT_MAX - INT_MIN) + 1) * (2 * M_PI) / enc_quad_lines_;
+
     msg.motor_current = boost::lexical_cast<float>(fields[2]) / 10;
     msg.commanded_velocity = from_rpm(boost::lexical_cast<double>(fields[3]));
     msg.motor_power = boost::lexical_cast<float>(fields[4]) / 1000.0;
     msg.measured_velocity = from_rpm(boost::lexical_cast<double>(fields[5]));
-    msg.measured_position = from_encoder_ticks(boost::lexical_cast<double>(fields[6]));
+
+    current_ticks = boost::lexical_cast<int>(fields[6]);
+    if(first_time == 0)
+    {
+       current_position = from_encoder_ticks((double)current_ticks);
+       msg.measured_position = current_position;
+
+       previous_position_ = current_position;
+       previous_ticks = current_ticks;
+       first_time = 1;
+    }
+    else
+    {
+       if(previous_ticks > current_ticks)
+       {
+          /* Rollover! */
+          delta_ticks = (MAX_POSITION_REGISTER_COUNTS - previous_ticks) + current_ticks;
+          current_position = previous_position_ + from_encoder_ticks((double)delta_ticks);
+          msg.measured_position = current_position;
+
+          previous_position_ = current_position;
+          previous_ticks = current_ticks;
+       }
+       else
+       {
+          delta_ticks = current_ticks - previous_ticks;
+          current_position = previous_position_ + from_encoder_ticks((double)delta_ticks);
+          msg.measured_position = current_position;
+
+          previous_position_ = current_position;
+          previous_ticks = current_ticks;
+       }
+    }
+
+
     msg.supply_voltage = boost::lexical_cast<float>(fields[7]) / 10.0;
     msg.supply_current = boost::lexical_cast<float>(fields[8]) / 10.0;
     msg.motor_temperature = boost::lexical_cast<int>(fields[9]) * 0.020153 - 4.1754;
