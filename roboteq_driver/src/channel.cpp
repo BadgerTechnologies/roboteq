@@ -97,9 +97,11 @@ void Channel::timeoutCallback(const ros::TimerEvent&)
 void Channel::feedbackCallback(std::vector<std::string> fields)
 {
   roboteq_msgs::Feedback msg;
-  static uint32_t first_time = 0;
+  static uint32_t first_time = 1;
   static uint32_t previous_ticks = 0;
-  static uint32_t current_ticks, delta_ticks;
+  uint32_t current_ticks;
+  int64_t delta_ticks;
+
   double current_position;
 
   msg.header.stamp = last_feedback_time_ = ros::Time::now();
@@ -117,37 +119,43 @@ void Channel::feedbackCallback(std::vector<std::string> fields)
     msg.measured_velocity = from_rpm(boost::lexical_cast<double>(fields[5]));
 
     current_ticks = boost::lexical_cast<int>(fields[6]);
-    if(first_time == 0)
+    if(first_time == 1)
     {
        current_position = from_encoder_ticks((double)current_ticks);
        msg.measured_position = current_position;
-
-       previous_position_ = current_position;
-       previous_ticks = current_ticks;
-       first_time = 1;
+       first_time = 0;
     }
     else
     {
-       if(previous_ticks > current_ticks)
+
+       delta_ticks = current_ticks - previous_ticks;
+
+       if(labs(delta_ticks) > (int64_t)(MAX_POSITION_REGISTER_COUNTS / 2))
        {
-          /* Rollover! */
-          delta_ticks = (MAX_POSITION_REGISTER_COUNTS - previous_ticks) + current_ticks;
+          /* A rollover of the position register has occurred and we need to
+           * modify our calculation of delta_ticks.
+           */
+          if(current_ticks > previous_ticks)
+          {
+             /* We rolled over travelling in reverse. */
+             delta_ticks = -(previous_ticks + (MAX_POSITION_REGISTER_COUNTS - current_ticks));
+          }
+          else
+          {
+             /* We rolled over travelling forward. */
+             delta_ticks = (MAX_POSITION_REGISTER_COUNTS - previous_ticks) + current_ticks;
+          }
+
           current_position = previous_position_ + from_encoder_ticks((double)delta_ticks);
           msg.measured_position = current_position;
 
-          previous_position_ = current_position;
-          previous_ticks = current_ticks;
        }
-       else
-       {
-          delta_ticks = current_ticks - previous_ticks;
-          current_position = previous_position_ + from_encoder_ticks((double)delta_ticks);
-          msg.measured_position = current_position;
 
-          previous_position_ = current_position;
-          previous_ticks = current_ticks;
-       }
+       previous_position_ = current_position;
+       previous_ticks = current_ticks;
+
     }
+
 
 
     msg.supply_voltage = boost::lexical_cast<float>(fields[7]) / 10.0;
