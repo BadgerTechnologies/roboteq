@@ -110,6 +110,7 @@ void Channel::feedbackCallback(std::vector<std::string> fields)
   // see mbs/script.mbs for URL and specific page references.
   try
   {
+     max_rpm_ = boost::lexical_cast<float>(fields[12]);
     enc_quad_lines_ = boost::lexical_cast<float>(fields[11]) * 4.0;
     // max_radians_ = (((uint64_t)INT_MAX - INT_MIN) + 1) * (2 * M_PI) / enc_quad_lines_;
 
