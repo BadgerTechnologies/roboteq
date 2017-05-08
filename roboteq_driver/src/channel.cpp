@@ -117,9 +117,9 @@ void Channel::feedbackCallback(std::vector<std::string> fields)
     enc_quad_lines_ = atof((fields[11].c_str())) * 4.0;
     // max_radians_ = (((uint64_t)INT_MAX - INT_MIN) + 1) * (2 * M_PI) / enc_quad_lines_;
 
-    ROS_WARN("max_rpm_ = %s, enc_quad_lines = %s", fields[12].c_str(), fields[11].c_str()); 
+    // ROS_WARN("max_rpm_ = %s, enc_quad_lines = %s", fields[12].c_str(), fields[11].c_str()); 
 
-    ROS_WARN("max_rpm_ = %f, enc_quad_lines = %f", max_rpm_, enc_quad_lines_); 
+    // ROS_WARN("max_rpm_ = %f, enc_quad_lines = %f", max_rpm_, enc_quad_lines_); 
     
     msg.motor_current = boost::lexical_cast<float>(fields[2]) / 10;
     msg.commanded_velocity = from_rpm(boost::lexical_cast<double>(fields[3]));

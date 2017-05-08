@@ -101,7 +101,9 @@ namespace roboteq {
       double rad;
       //return x * (2 * M_PI) / ENC_LINES;
       rad = x * (2 * M_PI) / enc_quad_lines_;
-      ROS_WARN("ticks = %lf, rad = %lf", x, rad);
+      
+      /* ROS_WARN("ticks = %lf, rad = %lf", x, rad); */
+
       return rad;
     }
   
