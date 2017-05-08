@@ -30,6 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "roboteq_msgs/Feedback.h"
 #include "roboteq_msgs/Command.h"
 
+#include <stdlib.h>
+
 #define ROBOTEQ_MAX_RPM	(2500/2)
 
 namespace roboteq {
@@ -38,6 +40,9 @@ Channel::Channel(int channel_num, std::string ns, Controller* controller) :
   nh_(ns), controller_(controller), channel_num_(channel_num), max_rpm_(ROBOTEQ_MAX_RPM),
   last_mode_(255)
 {
+  first_time = 1;
+  previous_ticks = 0;
+  
   sub_cmd_ = nh_.subscribe("cmd", 1, &Channel::cmdCallback, this);
   pub_feedback_ = nh_.advertise<roboteq_msgs::Feedback>("feedback", 1);
 
@@ -97,8 +102,6 @@ void Channel::timeoutCallback(const ros::TimerEvent&)
 void Channel::feedbackCallback(std::vector<std::string> fields)
 {
   roboteq_msgs::Feedback msg;
-  static uint32_t first_time = 1;
-  static uint32_t previous_ticks = 0;
   uint32_t current_ticks;
   int64_t delta_ticks;
 
@@ -110,26 +113,30 @@ void Channel::feedbackCallback(std::vector<std::string> fields)
   // see mbs/script.mbs for URL and specific page references.
   try
   {
-     max_rpm_ = boost::lexical_cast<float>(fields[12]);
-    enc_quad_lines_ = boost::lexical_cast<float>(fields[11]) * 4.0;
+    max_rpm_ = atof((fields[12].c_str()));
+    enc_quad_lines_ = atof((fields[11].c_str())) * 4.0;
     // max_radians_ = (((uint64_t)INT_MAX - INT_MIN) + 1) * (2 * M_PI) / enc_quad_lines_;
 
+    ROS_WARN("max_rpm_ = %s, enc_quad_lines = %s", fields[12].c_str(), fields[11].c_str()); 
+
+    ROS_WARN("max_rpm_ = %f, enc_quad_lines = %f", max_rpm_, enc_quad_lines_); 
+    
     msg.motor_current = boost::lexical_cast<float>(fields[2]) / 10;
     msg.commanded_velocity = from_rpm(boost::lexical_cast<double>(fields[3]));
     msg.motor_power = boost::lexical_cast<float>(fields[4]) / 1000.0;
     msg.measured_velocity = from_rpm(boost::lexical_cast<double>(fields[5]));
 
     current_ticks = boost::lexical_cast<int>(fields[6]);
+
     if(first_time == 1)
     {
        current_position = from_encoder_ticks((double)current_ticks);
-       msg.measured_position = current_position;
        first_time = 0;
     }
     else
     {
 
-       delta_ticks = current_ticks - previous_ticks;
+      delta_ticks = (int64_t)current_ticks - (int64_t)previous_ticks;
 
        if(labs(delta_ticks) > (int64_t)(MAX_POSITION_REGISTER_COUNTS / 2))
        {
@@ -146,18 +153,15 @@ void Channel::feedbackCallback(std::vector<std::string> fields)
              /* We rolled over travelling forward. */
              delta_ticks = (MAX_POSITION_REGISTER_COUNTS - previous_ticks) + current_ticks;
           }
-
-          current_position = previous_position_ + from_encoder_ticks((double)delta_ticks);
-          msg.measured_position = current_position;
-
        }
-
-       previous_position_ = current_position;
-       previous_ticks = current_ticks;
-
+       
+       current_position = previous_position_ + from_encoder_ticks((double)delta_ticks);
+    
     }
-
-
+    
+    previous_position_ = current_position;
+    previous_ticks = current_ticks;
+    msg.measured_position = current_position;
 
     msg.supply_voltage = boost::lexical_cast<float>(fields[7]) / 10.0;
     msg.supply_current = boost::lexical_cast<float>(fields[8]) / 10.0;
